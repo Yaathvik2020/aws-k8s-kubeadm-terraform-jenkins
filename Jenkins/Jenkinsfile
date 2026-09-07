@@ -1,0 +1,125 @@
+// ==============================================================================
+// Jenkinsfile - FULLY AUTOMATED AWS DEPLOYMENT, NO MANUAL INTERVENTION
+//
+// Terraform creates the VPC, bastion, master, and workers on AWS, generates
+// its own SSH keys, and bootstraps kubeadm by relaying through the bastion.
+// Jenkins only needs AWS credentials - no SSH keys to manage here at all.
+//
+// SETUP NEEDED BEFORE THIS WORKS (one-time, in Jenkins UI):
+//   1. Terraform installed on the Jenkins agent.
+//   2. AWS credentials available to the agent - EITHER:
+//        a) an IAM role attached to the EC2 instance/ECS task running
+//           Jenkins (recommended - no secrets to manage at all), OR
+//        b) an AWS credentials pair added under Manage Jenkins > Credentials
+//           as "AWS Credentials", ID = aws-terraform-creds
+//   3. terraform.tfvars committed (no secrets in it - see terraform.tfvars.example)
+//      with allowed_ssh_cidr set to a real IP if you ever want to SSH in manually.
+//   4. Configure terraform/backend.tf (copy from backend.tf.example) pointing
+//      at an S3 bucket + DynamoDB table you've created, since state holds
+//      the generated SSH private keys and must not live unencrypted on disk.
+//   5. Create this job as a "Pipeline" job pointed at this repo/Jenkinsfile.
+//   6. Zero-click triggers: git push webhook, or uncomment the cron below.
+// ==============================================================================
+
+pipeline {
+    agent any
+
+    // Uncomment for a fully unattended schedule with no human trigger at all:
+    // triggers { cron('H 2 * * *') }
+
+    environment {
+        TF_DIR = 'terraform'
+        // Only used if NOT relying on an IAM instance role (see setup note 2b above)
+        AWS_CRED_ID = 'aws-terraform-creds'
+    }
+
+    options {
+        timeout(time: 45, unit: 'MINUTES')
+        disableConcurrentBuilds()
+    }
+
+    stages {
+
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Terraform Init') {
+            steps {
+                dir(TF_DIR) {
+                    sh 'terraform init -input=false'
+                }
+            }
+        }
+
+        stage('Terraform Validate') {
+            steps {
+                dir(TF_DIR) {
+                    sh 'terraform validate'
+                }
+            }
+        }
+
+        stage('Terraform Plan') {
+            steps {
+                dir(TF_DIR) {
+                    withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: AWS_CRED_ID]]) {
+                        sh 'terraform plan -input=false -out=tfplan'
+                    }
+                }
+            }
+        }
+
+        stage('Terraform Apply') {
+            steps {
+                dir(TF_DIR) {
+                    withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: AWS_CRED_ID]]) {
+                        sh 'terraform apply -input=false -auto-approve tfplan'
+                    }
+                }
+            }
+        }
+
+        stage('Verify Cluster') {
+            steps {
+                dir(TF_DIR) {
+                    withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: AWS_CRED_ID]]) {
+                        sh '''
+                            terraform output -raw bastion_private_key_pem > /tmp/bastion_key.pem
+                            terraform output -raw node_private_key_pem    > /tmp/node_key.pem
+                            chmod 600 /tmp/bastion_key.pem /tmp/node_key.pem
+
+                            BASTION_IP=$(terraform output -raw bastion_public_ip)
+                            MASTER_IP=$(terraform output -raw master_private_ip)
+                            PROXY="ssh -i /tmp/bastion_key.pem -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -W %h:%p ubuntu@$BASTION_IP"
+
+                            for i in $(seq 1 20); do
+                              READY=$(ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+                                -o ProxyCommand="$PROXY" -i /tmp/node_key.pem ubuntu@$MASTER_IP \
+                                "kubectl get nodes --no-headers 2>/dev/null | grep -v ' Ready' | wc -l" || echo 999)
+                              if [ "$READY" = "0" ]; then
+                                echo "All nodes Ready."
+                                break
+                              fi
+                              echo "Waiting for all nodes to become Ready... ($i/20)"
+                              sleep 15
+                            done
+
+                            ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+                              -o ProxyCommand="$PROXY" -i /tmp/node_key.pem ubuntu@$MASTER_IP "kubectl get nodes -o wide"
+
+                            rm -f /tmp/bastion_key.pem /tmp/node_key.pem
+                        '''
+                    }
+                }
+            }
+        }
+    }
+
+    post {
+        success { echo 'AWS infra + kubeadm cluster built and verified end-to-end - no manual steps required.' }
+        failure { echo 'Pipeline failed - check the console log above for the failing stage.' }
+    }
+}

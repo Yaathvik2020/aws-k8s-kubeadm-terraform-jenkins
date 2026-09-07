@@ -1,0 +1,40 @@
+// ==============================================================================
+// Jenkinsfile.destroy - tears down ALL AWS resources this project created
+// (VPC, bastion, master, workers, NAT Gateway, keys). Kept as a separate job.
+// ==============================================================================
+
+pipeline {
+    agent any
+
+    environment {
+        TF_DIR      = 'terraform'
+        AWS_CRED_ID = 'aws-terraform-creds'
+    }
+
+    stages {
+        stage('Checkout') {
+            steps { checkout scm }
+        }
+
+        stage('Terraform Init') {
+            steps {
+                dir(TF_DIR) { sh 'terraform init -input=false' }
+            }
+        }
+
+        stage('Terraform Destroy') {
+            steps {
+                dir(TF_DIR) {
+                    withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: AWS_CRED_ID]]) {
+                        sh 'terraform destroy -auto-approve'
+                    }
+                }
+            }
+        }
+    }
+
+    post {
+        success { echo 'All AWS resources destroyed.' }
+        failure { echo 'Destroy failed - check console log.' }
+    }
+}

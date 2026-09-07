@@ -1,0 +1,27 @@
+# ==============================================================================
+# nodes.tf
+# Master and worker EC2 instances - private subnet, NO public IP. Only
+# reachable from the bastion (enforced by security_groups.tf), and only
+# have outbound internet via the NAT Gateway.
+# ==============================================================================
+
+resource "aws_instance" "master" {
+  ami                    = data.aws_ami.ubuntu.id
+  instance_type          = var.node_instance_type
+  subnet_id              = aws_subnet.private.id
+  vpc_security_group_ids = [aws_security_group.node.id]
+  key_name               = aws_key_pair.node.key_name
+
+  tags = { Name = "${var.cluster_name}-master" }
+}
+
+resource "aws_instance" "worker" {
+  count                  = var.worker_count
+  ami                    = data.aws_ami.ubuntu.id
+  instance_type          = var.node_instance_type
+  subnet_id              = aws_subnet.private.id
+  vpc_security_group_ids = [aws_security_group.node.id]
+  key_name               = aws_key_pair.node.key_name
+
+  tags = { Name = "${var.cluster_name}-worker-${count.index + 1}" }
+}
