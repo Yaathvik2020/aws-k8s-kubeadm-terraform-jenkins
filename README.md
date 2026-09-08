@@ -111,8 +111,10 @@ during the same run, so you don't need to reach the master directly afterward.
 
 Check the result - just one hop, straight to the bastion:
 ```bash
-terraform output -raw bastion_private_key_pem > bastion_key.pem && chmod 600 bastion_key.pem
+terraform state list  --> all file in the state.tf
 
+terraform output -raw bastion_private_key_pem > bastion_key.pem && chmod 600 bastion_key.pem
+terraform output -raw node_private_key_pem > node_key.pem && chmod 600 bastion_key.pem
 scp -i bastion_key.pem ubuntu@$(terraform output -raw bastion_public_ip):~/kubeconfig ./kubeconfig
 export KUBECONFIG=./kubeconfig
 kubectl get nodes
