@@ -8,7 +8,7 @@
 resource "aws_instance" "master" {
   ami                    = data.aws_ami.ubuntu.id
   instance_type          = var.node_instance_type
-  subnet_id              = aws_subnet.private.id
+  subnet_id              = aws_subnet.private[0].id
   vpc_security_group_ids = [aws_security_group.node.id]
   key_name               = aws_key_pair.node.key_name
   iam_instance_profile   = aws_iam_instance_profile.k8s-kubeadm-aws-alb-iam-profile.name
@@ -25,7 +25,7 @@ resource "aws_instance" "worker" {
   count                  = var.worker_count
   ami                    = data.aws_ami.ubuntu.id
   instance_type          = var.node_instance_type
-  subnet_id              = aws_subnet.private.id
+  subnet_id              = aws_subnet.private[1].id
   vpc_security_group_ids = [aws_security_group.node.id]
   key_name               = aws_key_pair.node.key_name
   iam_instance_profile   = aws_iam_instance_profile.k8s-kubeadm-aws-alb-iam-profile.name
