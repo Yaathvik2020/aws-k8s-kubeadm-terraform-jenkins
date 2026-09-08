@@ -32,7 +32,7 @@ resource "null_resource" "prep_bastion" {
     content     = tls_private_key.node.private_key_pem
     destination = "/home/${var.ssh_user}/node_key"
   }
-
+  
   provisioner "file" {
     source      = "${path.module}/scripts/common.sh"
     destination = "/home/${var.ssh_user}/common.sh"
@@ -116,20 +116,20 @@ resource "null_resource" "bootstrap_worker_via_bastion" {
   }
 }
 
-# ------------------------------------------------------------------------------
-# Stage 4: wipe the node key off the bastion once bootstrap is complete.
-# ------------------------------------------------------------------------------
-resource "null_resource" "cleanup_bastion_key" {
-  depends_on = [null_resource.bootstrap_worker_via_bastion]
+# --------------------------------------------------------------------------------------------------------------------------------
+# Stage 4: wipe the node key off the bastion once bootstrap is complete. skip the step  node key  needs to connect master via ssh
+# --------------------------------------------------------------------------------------------------------------------------------
+# resource "null_resource" "cleanup_bastion_key" {
+#  depends_on = [null_resource.bootstrap_worker_via_bastion]
 
-  connection {
-    type        = "ssh"
-    host        = aws_instance.bastion.public_ip
-    user        = var.ssh_user
-    private_key = tls_private_key.bastion.private_key_pem
-  }
+# connection {
+#    type        = "ssh"
+#   host        = aws_instance.bastion.public_ip
+#    user        = var.ssh_user
+#    private_key = tls_private_key.bastion.private_key_pem
+ # }
 
-  provisioner "remote-exec" {
-    inline = ["shred -u ~/node_key || rm -f ~/node_key"]
-  }
-}
+  #provisioner "remote-exec" {
+   # inline = ["shred -u ~/node_key || rm -f ~/node_key"]
+  #}
+#}

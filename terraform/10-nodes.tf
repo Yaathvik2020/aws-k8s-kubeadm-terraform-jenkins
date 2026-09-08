@@ -11,8 +11,14 @@ resource "aws_instance" "master" {
   subnet_id              = aws_subnet.private.id
   vpc_security_group_ids = [aws_security_group.node.id]
   key_name               = aws_key_pair.node.key_name
+  iam_instance_profile   = aws_iam_instance_profile.k8s-kubeadm-aws-alb-iam-profile.name
 
   tags = { Name = "${var.cluster_name}-master" }
+
+  root_block_device {
+    volume_size = var.root_volume_size
+    volume_type = "gp3"
+  }
 }
 
 resource "aws_instance" "worker" {
@@ -22,6 +28,11 @@ resource "aws_instance" "worker" {
   subnet_id              = aws_subnet.private.id
   vpc_security_group_ids = [aws_security_group.node.id]
   key_name               = aws_key_pair.node.key_name
-
+  iam_instance_profile   = aws_iam_instance_profile.k8s-kubeadm-aws-alb-iam-profile.name
   tags = { Name = "${var.cluster_name}-worker-${count.index + 1}" }
+
+  root_block_device {
+    volume_size = var.root_volume_size
+    volume_type = "gp3"
+  }
 }

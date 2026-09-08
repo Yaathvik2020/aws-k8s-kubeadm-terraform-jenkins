@@ -36,8 +36,12 @@ output "next_steps" {
     To manage the cluster from your own machine:
       terraform output -raw bastion_private_key_pem > bastion_key.pem && chmod 600 bastion_key.pem
 
+	Or pull it down to your own machine (note: the API server address inside
+    is the master's PRIVATE IP, so you'd need an SSH tunnel through the
+    bastion for it to be reachable from outside the VPC):
       scp -i bastion_key.pem ${var.ssh_user}@${aws_instance.bastion.public_ip}:~/kubeconfig ./kubeconfig
       export KUBECONFIG=./kubeconfig
       kubectl get nodes
+	  
   EOT
 }

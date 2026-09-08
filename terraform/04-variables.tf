@@ -22,21 +22,27 @@ variable "vpc_cidr" {
   default = "10.0.0.0/16"
 }
 
-variable "public_subnet_cidr" {
-  description = "Subnet the bastion lives in (has a route to the internet gateway)"
-  type        = string
-  default     = "10.0.1.0/24"
+variable "public_subnet_cidrs" {
+  description = "CIDR blocks for the two public subnets (bastion + NAT)"
+  type        = list(string)
+  default     = ["10.0.1.0/24", "10.0.2.0/24"]
 }
 
-variable "private_subnet_cidr" {
-  description = "Subnet master/workers live in (reachable only via NAT for outbound, and only via bastion for inbound SSH)"
-  type        = string
-  default     = "10.0.2.0/24"
+variable "private_subnet_cidrs" {
+  description = "CIDR blocks for the two private subnets (master + workers)"
+  type        = list(string)
+  default     = ["10.0.11.0/24", "10.0.12.0/24"]
+}
+variable "azs" {
+  description = "Availability zones to spread subnets across (must have exactly 2)"
+  type        = list(string)
+  default     = []
 }
 
-variable "availability_zone" {
-  type    = string
-  default = "ap-south-1a"
+variable "single_nat_gateway" {
+  description = "Use a single NAT Gateway (cheaper) instead of one per AZ (HA)"
+  type        = bool
+  default     = true
 }
 
 variable "allowed_ssh_cidr" {
@@ -63,6 +69,12 @@ variable "worker_count" {
   description = "Number of worker nodes to create"
   type        = number
   default     = 2
+}
+
+variable "root_volume_size" {
+  description = "Root EBS volume size (GB) for master/worker nodes"
+  type        = number
+  default     = 30
 }
 
 variable "ssh_user" {

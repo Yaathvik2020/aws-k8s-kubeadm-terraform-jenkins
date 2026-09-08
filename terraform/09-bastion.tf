@@ -28,8 +28,15 @@ resource "null_resource" "wait_for_bastion" {
     private_key = tls_private_key.bastion.private_key_pem
     timeout     = "5m"
   }
+ 
+   provisioner "file" {
+    source      = "${path.module}/scripts/bastion-kubectl.sh"
+    destination = "/home/${var.ssh_user}/bastion-kubectl.sh"
+  }
 
   provisioner "remote-exec" {
-    inline = ["echo 'bastion is up and reachable'"]
+    inline = [
+      "chmod +x /home/${var.ssh_user}/bastion-kubectl.sh && /home/${var.ssh_user}/bastion-kubectl.sh",   
+    ]
   }
 }
