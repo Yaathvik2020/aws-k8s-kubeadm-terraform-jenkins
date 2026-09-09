@@ -13,9 +13,9 @@
 # ==============================================================================
 set -euo pipefail
 
-BUCKET_NAME="${1:?Usage: $0 <bucket-name> <dynamodb-table-name> <aws-region>}"
-TABLE_NAME="${2:?Usage: $0 <bucket-name> <dynamodb-table-name> <aws-region>}"
-REGION="${3:?Usage: $0 <bucket-name> <dynamodb-table-name> <aws-region>}"
+BUCKET_NAME="ksys-k8s-terraform-state-bucket"
+TABLE_NAME="ksys-k8s-terraform-state-DynamoDB"
+REGION="ap-south-1"
 
 echo ">>> Checking if bucket '$BUCKET_NAME' already exists"
 if aws s3api head-bucket --bucket "$BUCKET_NAME" 2>/dev/null; then
@@ -48,16 +48,40 @@ echo ">>> Checking if DynamoDB lock table '$TABLE_NAME' already exists"
 if aws dynamodb describe-table --table-name "$TABLE_NAME" --region "$REGION" >/dev/null 2>&1; then
   echo "Table already exists - skipping creation."
 else
-  echo ">>> Creating DynamoDB table '$TABLE_NAME' for state locking"
-  aws dynamodb create-table \
-    --table-name "$TABLE_NAME" \
-    --region "$REGION" \
-    --attribute-definitions AttributeName=LockID,AttributeType=S \
-    --key-schema AttributeName=LockID,KeyType=HASH \
-    --billing-mode PAY_PER_REQUEST
+ echo "Checking installed Terraform version..."
+ if ! command -v terraform &> /dev/null; then
+  echo "ERROR: terraform is not installed or not on PATH." >&2
+  exit 1
+  fi
+  # Get the raw version string, e.g. "1.7.2" or "1.5.7"
+TF_VERSION_RAW=$(terraform version -json | grep -o '"terraform_version": *"[^"]*"' | cut -d'"' -f4)
+if [[ -z "$TF_VERSION_RAW" ]]; then
+  echo "ERROR: could not determine Terraform version." >&2
+  exit 1
+fi
+echo "Detected Terraform version: $TF_VERSION_RAW"
+TF_MAJOR=$(echo "$TF_VERSION" | cut -d. -f1)
+TF_MINOR=$(echo "$TF_VERSION" | cut -d. -f2)
 
-  echo ">>> Waiting for table to become ACTIVE"
-  aws dynamodb wait table-exists --table-name "$TABLE_NAME" --region "$REGION"
+if [[ "$TF_MAJOR" -eq 1 && "$TF_MINOR" -le 5 ]]; then
+    CREATE_DYNAMODB=true
+else
+    CREATE_DYNAMODB=false
+fi
+  echo ">>> Creating DynamoDB table '$TABLE_NAME' for state locking"
+  if [[ "$CREATE_DYNAMODB" == "true" ]]; then
+      aws dynamodb create-table \
+        --table-name "$TABLE_NAME" \
+        --region "$REGION" \
+        --attribute-definitions AttributeName=LockID,AttributeType=S \
+        --key-schema AttributeName=LockID,KeyType=HASH \
+        --billing-mode PAY_PER_REQUEST
+
+      echo ">>> Waiting for table to become ACTIVE"
+      aws dynamodb wait table-exists --table-name "$TABLE_NAME" --region "$REGION"
+  else
+    echo "Terraform version detected as higher -> DynamoDB lock table will NOT be created."
+  fi
 fi
 
 cat <<DONE
