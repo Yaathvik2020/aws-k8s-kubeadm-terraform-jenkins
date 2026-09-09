@@ -45,13 +45,15 @@ pipeline {
     }
 
     stages {
-         stage('Create Backend as S3 bucket for Terraform state') {
+         stage('Create Backend as S3 bucket for tf state') {
             steps {
               dir(BACKEND_S3) {
+                withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: AWS_CRED_ID]]) {
                   sh '''
                     chmod +x create-backend.sh
                     ./create-backend.sh "${BUCKET_NAME}" "${TABLE_NAME}" "${AWS_REGION}"
                    '''
+               }
             }
         }
     }
