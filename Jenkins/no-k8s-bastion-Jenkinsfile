@@ -47,7 +47,7 @@ pipeline {
     stages {
          stage('Create Backend as S3 bucket for Terraform state') {
             steps {
-              dir(BACKEND-S3) {
+              dir(BACKEND_S3) {
                   sh '''
                     chmod +x create-backend.sh
                     ./create-backend.sh "${BUCKET_NAME}" "${TABLE_NAME}" "${AWS_REGION}"
