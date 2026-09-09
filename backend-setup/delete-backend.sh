@@ -17,9 +17,9 @@
 # ==============================================================================
 set -euo pipefail
 
-BUCKET_NAME="${1:?Usage: $0 'ksys-k8s-terraform-state-bucket' 'ksys-k8s-terraform-state-DynamoDB' 'ap-south-1' [--force]}"
-TABLE_NAME="${2:?Usage: $0 'ksys-k8s-terraform-state-bucket' 'ksys-k8s-terraform-state-DynamoDB' 'ap-south-1' [--force]}"
-REGION="${3:?Usage: $0 'ksys-k8s-terraform-state-bucket' 'ksys-k8s-terraform-state-DynamoDB' 'ap-south-1' [--force]}"
+BUCKET_NAME="${1:?Usage: $0 <bucket-name> <dynamodb-table-name> <aws-region> [--force]}"
+TABLE_NAME="${2:?Usage: $0 <bucket-name> <dynamodb-table-name> <aws-region> [--force]}"
+REGION="${3:?Usage: $0 <bucket-name> <dynamodb-table-name> <aws-region> [--force]}"
 FORCE="${4:-}"
 
 if ! command -v jq >/dev/null 2>&1; then
