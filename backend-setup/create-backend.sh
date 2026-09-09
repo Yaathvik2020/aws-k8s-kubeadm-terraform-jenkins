@@ -60,8 +60,8 @@ if [[ -z "$TF_VERSION_RAW" ]]; then
   exit 1
 fi
 echo "Detected Terraform version: $TF_VERSION_RAW"
-TF_MAJOR=$(echo "$TF_VERSION" | cut -d. -f1)
-TF_MINOR=$(echo "$TF_VERSION" | cut -d. -f2)
+TF_MAJOR=$(echo "$TF_VERSION_RAW" | cut -d. -f1)
+TF_MINOR=$(echo "$TF_VERSION_RAW" | cut -d. -f2)
 
 if [[ "$TF_MAJOR" -eq 1 && "$TF_MINOR" -le 5 ]]; then
     CREATE_DYNAMODB=true
