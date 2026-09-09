@@ -129,6 +129,7 @@ pipeline {
     }
 
     post {
+         cleanWS()
         success { echo 'AWS infra + kubeadm cluster built and verified end-to-end - no manual steps required.' }
         failure { echo 'Pipeline failed - check the console log above for the failing stage.' }
     }
