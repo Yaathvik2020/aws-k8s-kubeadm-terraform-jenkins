@@ -13,6 +13,6 @@ terraform {
     region         = "ap-south-1"
 	use_lockfile   = true
     encrypt        = true                    # SSE-S3 encryption at rest
-    #dynamodb_table = "your-terraform-lock-table"  # state locking, prevents concurrent applies
+    #dynamodb_table = "ksys-k8s-terraform-state-dynamoDB"  # state locking, prevents concurrent applies
   }
 }
