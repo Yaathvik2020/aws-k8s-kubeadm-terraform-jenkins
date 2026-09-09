@@ -28,7 +28,7 @@ pipeline {
     // triggers { cron('H 2 * * *') }
 
     environment {
-        BACKEND-S3 = 'backend-setup'
+        BACKEND_S3 = 'backend-setup'
         TF_DIR = 'terraform'
         // Only used if NOT relying on an IAM instance role (see setup note 2b above)
         AWS_CRED_ID = 'aws-terraform-creds'
