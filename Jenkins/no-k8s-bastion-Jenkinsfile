@@ -28,6 +28,7 @@ pipeline {
     // triggers { cron('H 2 * * *') }
 
     environment {
+        BACKEND-S3 = 'backend-setup'
         TF_DIR = 'terraform'
         // Only used if NOT relying on an IAM instance role (see setup note 2b above)
         AWS_CRED_ID = 'aws-terraform-creds'
@@ -46,12 +47,14 @@ pipeline {
     stages {
          stage('Create Backend as S3 bucket for Terraform state') {
             steps {
-                sh '''
+              dir(BACKEND-S3) {
+                  sh '''
                     chmod +x create-backend.sh
                     ./create-backend.sh "${BUCKET_NAME}" "${TABLE_NAME}" "${AWS_REGION}"
-                '''
+                   '''
             }
         }
+    }
     stage('Terraform Init') {
             steps {
                 dir(TF_DIR) {
