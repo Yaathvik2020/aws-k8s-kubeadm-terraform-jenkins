@@ -84,20 +84,3 @@ fi
     echo "Terraform version detected as higher -> DynamoDB lock table will NOT be created."
   fi
 fi
-
-cat <<DONE
-
-Backend is ready. Add this to terraform/backend.tf (copy from backend.tf.example):
-
-terraform {
-  backend "s3" {
-    bucket         = "$BUCKET_NAME"
-    key            = "k8s-kubeadm/terraform.tfstate"
-    region         = "$REGION"
-    encrypt        = true
-    dynamodb_table = "$TABLE_NAME"
-  }
-}
-
-Then run: terraform init
-DONE
