@@ -44,7 +44,15 @@ pipeline {
     }
 
     stages {
-        stage('Terraform Init') {
+         stage('Create Backend as S3 bucket for Terraform state') {
+            steps {
+                sh '''
+                    chmod +x create-backend.sh
+                    ./create-backend.sh "${BUCKET_NAME}" "${TABLE_NAME}" "${AWS_REGION}"
+                '''
+            }
+        }
+    stage('Terraform Init') {
             steps {
                 dir(TF_DIR) {
                  withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: AWS_CRED_ID]]) {
@@ -116,14 +124,6 @@ pipeline {
                         '''
                     }
                 }
-            }
-        }
-        stage('Create Backend as S3 bucket for Terraform state') {
-            steps {
-                sh '''
-                    chmod +x create-backend.sh
-                    ./create-backend.sh "${BUCKET_NAME}" "${TABLE_NAME}" "${AWS_REGION}"
-                '''
             }
         }
     }
