@@ -13,9 +13,10 @@
 # ==============================================================================
 set -euo pipefail
 
-BUCKET_NAME="ksys-k8s-terraform-state-bucket"
-TABLE_NAME="ksys-k8s-terraform-state-DynamoDB"
-REGION="ap-south-1"
+
+BUCKET_NAME="${1:?Usage: $0 <bucket-name> <dynamodb-table-name> <aws-region>}"
+TABLE_NAME="${2:?Usage: $0 <bucket-name> <dynamodb-table-name> <aws-region>}"
+REGION="${3:?Usage: $0 <bucket-name> <dynamodb-table-name> <aws-region>}"
 
 echo ">>> Checking if bucket '$BUCKET_NAME' already exists"
 if aws s3api head-bucket --bucket "$BUCKET_NAME" 2>/dev/null; then
