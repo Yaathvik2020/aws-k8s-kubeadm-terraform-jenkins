@@ -83,7 +83,29 @@ resource "null_resource" "bootstrap_master_via_bastion" {
     ]
   }
 }
+resource "null_resource" "setup_kubectl_on_bastion" {
+  depends_on = [null_resource.bootstrap_master_via_bastion]
 
+  connection {
+    type        = "ssh"
+    host        = aws_instance.bastion.public_ip
+    user        = var.ssh_user
+    private_key = tls_private_key.bastion.private_key_pem
+  }
+
+  provisioner "remote-exec" {
+    inline = [
+      # kubeconfig was already pulled from master to the bastion's ~/kubeconfig
+      # during bootstrap_master_via_bastion — set it up as the default config
+      "mkdir -p ~/.kube",
+      "cp ~/kubeconfig ~/.kube/config",
+      "chmod 600 ~/.kube/config",
+
+      # sanity check
+      "kubectl get nodes -o wide"
+    ]
+  }
+}
 # ------------------------------------------------------------------------------
 # Stage 3: same pattern per WORKER.
 # ------------------------------------------------------------------------------
