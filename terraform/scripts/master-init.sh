@@ -57,8 +57,40 @@ kubectl --kubeconfig="$KCFG" create -f custom-resources.yaml
 
 # ---------------------------------------------------------------------------
 # 3. Wait for Calico to actually come up before moving on
+#
+# The operator creates the calico-system namespace and the calico-node
+# daemonset asynchronously - checking rollout status too early fails with
+# "NotFound" (not "not ready"), which is a different problem and shouldn't
+# be treated as terminal. So first poll until the namespace and daemonset
+# actually exist, THEN check rollout status.
 # ---------------------------------------------------------------------------
-kubectl --kubeconfig="$KCFG" wait --for=condition=Available --timeout=300s tigerastatus/calico 2>/dev/null || \
+echo ">>> [master-init.sh] Waiting for calico-system namespace to be created"
+for i in $(seq 1 30); do
+  if kubectl --kubeconfig="$KCFG" get namespace calico-system >/dev/null 2>&1; then
+    echo "calico-system namespace found."
+    break
+  fi
+  echo "  ...not yet ($i/30)"; sleep 10
+  if [ "$i" -eq 30 ]; then
+    echo "ERROR: calico-system namespace never appeared after 5 minutes."
+    exit 1
+  fi
+done
+
+echo ">>> [master-init.sh] Waiting for calico-node daemonset to be created"
+for i in $(seq 1 30); do
+  if kubectl --kubeconfig="$KCFG" get daemonset calico-node -n calico-system >/dev/null 2>&1; then
+    echo "calico-node daemonset found."
+    break
+  fi
+  echo "  ...not yet ($i/30)"; sleep 10
+  if [ "$i" -eq 30 ]; then
+    echo "ERROR: calico-node daemonset never appeared after 5 minutes."
+    exit 1
+  fi
+done
+
+echo ">>> [master-init.sh] Waiting for calico-node rollout to complete"
 kubectl --kubeconfig="$KCFG" rollout status daemonset/calico-node -n calico-system --timeout=300s
 
 echo ">>> [master-init.sh] Generating the worker join command"
