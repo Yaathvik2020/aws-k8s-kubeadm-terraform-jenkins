@@ -36,7 +36,7 @@ pipeline {
                         message: "This will PERMANENTLY destroy ALL AWS infrastructure (VPC, bastion, master, workers, NAT gateway, keys) AND delete the Terraform state bucket '${params.BUCKET_NAME}' + table '${params.TABLE_NAME}'.\nType the bucket name to confirm:",
                         parameters: [string(name: 'CONFIRM_NAME', defaultValue: '')]
                     )
-                    if (confirmation != params.BUCKET_NAME) {
+                    if (confirmation != 'yes') {
                         error("Confirmation text did not match bucket name ('${params.BUCKET_NAME}'). Aborting - nothing was destroyed.")
                     }
                 }
