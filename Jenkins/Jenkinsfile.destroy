@@ -2,29 +2,57 @@
 // Jenkinsfile.destroy - tears down ALL AWS resources this project created
 // (VPC, bastion, master, workers, NAT Gateway, keys). Kept as a separate job.
 // ==============================================================================
-
 pipeline {
     agent any
 
     environment {
         TF_DIR      = 'terraform'
         AWS_CRED_ID = 'aws-terraform-creds'
+        BACKEND_S3  = 'backend-setup'
     }
+
     parameters {
         string(name: 'BUCKET_NAME', defaultValue: 'ksys-k8s-terraform-state-bucket', description: 'S3 bucket to DELETE (state history will be lost permanently)')
         string(name: 'TABLE_NAME',  defaultValue: 'ksys-k8s-terraform-state-dynodb', description: 'DynamoDB lock table to DELETE')
         string(name: 'AWS_REGION',  defaultValue: 'ap-south-1', description: 'AWS region')
     }
-   stages{
-       stage('Terraform Init') {
+
+    stages {
+
+        stage('Validate Parameters') {
             steps {
-                dir(TF_DIR) {
-                 withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: AWS_CRED_ID]]) {
-                    sh 'terraform init -input=false'
-                  }
+                script {
+                    if (!params.BUCKET_NAME?.trim() || !params.TABLE_NAME?.trim()) {
+                        error("BUCKET_NAME and TABLE_NAME must be provided - refusing to run with blank values.")
+                    }
                 }
             }
         }
+
+        stage('Confirm Full Teardown') {
+            steps {
+                script {
+                    def confirmation = input(
+                        message: "This will PERMANENTLY destroy ALL AWS infrastructure (VPC, bastion, master, workers, NAT gateway, keys) AND delete the Terraform state bucket '${params.BUCKET_NAME}' + table '${params.TABLE_NAME}'.\nType the bucket name to confirm:",
+                        parameters: [string(name: 'CONFIRM_NAME', defaultValue: '')]
+                    )
+                    if (confirmation != params.BUCKET_NAME) {
+                        error("Confirmation text did not match bucket name ('${params.BUCKET_NAME}'). Aborting - nothing was destroyed.")
+                    }
+                }
+            }
+        }
+
+        stage('Terraform Init') {
+            steps {
+                dir(TF_DIR) {
+                    withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: AWS_CRED_ID]]) {
+                        sh 'terraform init -input=false'
+                    }
+                }
+            }
+        }
+
         stage('Terraform Destroy') {
             steps {
                 dir(TF_DIR) {
@@ -34,44 +62,24 @@ pipeline {
                 }
             }
         }
-       stage('Validate Parameters') {
-            steps {
-                script {
-                    if (!params.BUCKET_NAME?.trim() || !params.TABLE_NAME?.trim()) {
-                        error("BUCKET_NAME and TABLE_NAME must be provided - refusing to run with blank values.")
-                    }
-                }
-            }
-        }
-      stage('Confirm Deletion') {
-            steps {
-                script {
-                    def confirmation = input(
-                        message: "This will PERMANENTLY delete bucket '${params.BUCKET_NAME}' (all state history) and table '${params.TABLE_NAME}' in ${params.AWS_REGION}.\nType the bucket name to confirm:",
-                        parameters: [string(name: 'CONFIRM_NAME', defaultValue: '')]
-                    )
-                    if (confirmation != params.BUCKET_NAME) {
-                        error("Confirmation text did not match bucket name ('${params.BUCKET_NAME}'). Aborting - nothing was deleted.")
-                    }
-                }
-            }
-        }
+
         stage('Delete Backend') {
             steps {
-			 dir(BACKEND_S3) {
-               withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: AWS_CRED_ID]]) {
-                    sh '''
-                        chmod +x delete-backend.sh
-                        ./delete-backend.sh "${BUCKET_NAME}" "${TABLE_NAME}" "${AWS_REGION}" --force
-                    '''
+                dir(BACKEND_S3) {
+                    withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: AWS_CRED_ID]]) {
+                        sh '''
+                            chmod +x delete-backend.sh
+                            ./delete-backend.sh "${BUCKET_NAME}" "${TABLE_NAME}" "${AWS_REGION}" --force
+                        '''
+                    }
                 }
             }
         }
     }
 
     post {
-         always{
-         cleanWs()
+        always {
+            cleanWs()
         }
         success { echo 'All AWS resources destroyed.' }
         failure { echo 'Destroy failed - check console log.' }
