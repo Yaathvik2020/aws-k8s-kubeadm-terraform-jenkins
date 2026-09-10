@@ -15,7 +15,8 @@ pipeline {
         string(name: 'TABLE_NAME',  defaultValue: 'ksys-k8s-terraform-state-dynodb', description: 'DynamoDB lock table to DELETE')
         string(name: 'AWS_REGION',  defaultValue: 'ap-south-1', description: 'AWS region')
     }
-   stage('Terraform Init') {
+   stages{
+       stage('Terraform Init') {
             steps {
                 dir(TF_DIR) {
                  withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: AWS_CRED_ID]]) {
