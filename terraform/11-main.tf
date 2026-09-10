@@ -83,6 +83,9 @@ resource "null_resource" "bootstrap_master_via_bastion" {
     ]
   }
 }
+# ------------------------------------------------------------------------------
+# Stage 3: bastion setup_kubectl_on_bastion
+# ------------------------------------------------------------------------------
 resource "null_resource" "setup_kubectl_on_bastion" {
   depends_on = [null_resource.bootstrap_master_via_bastion]
 
@@ -107,7 +110,7 @@ resource "null_resource" "setup_kubectl_on_bastion" {
   }
 }
 # ------------------------------------------------------------------------------
-# Stage 3: same pattern per WORKER.
+# Stage 4: same pattern per WORKER.
 # ------------------------------------------------------------------------------
 resource "null_resource" "bootstrap_worker_via_bastion" {
   count      = var.worker_count
@@ -139,7 +142,7 @@ resource "null_resource" "bootstrap_worker_via_bastion" {
 }
 
 # --------------------------------------------------------------------------------------------------------------------------------
-# Stage 4: wipe the node key off the bastion once bootstrap is complete. skip the step  node key  needs to connect master via ssh
+# Stage 5: wipe the node key off the bastion once bootstrap is complete. skip the step  node key  needs to connect master via ssh
 # --------------------------------------------------------------------------------------------------------------------------------
 # resource "null_resource" "cleanup_bastion_key" {
 #  depends_on = [null_resource.bootstrap_worker_via_bastion]
