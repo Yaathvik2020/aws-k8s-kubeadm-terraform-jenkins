@@ -19,7 +19,7 @@ locals {
 # Uploaded fresh each run; wiped again in the cleanup step below.
 # ------------------------------------------------------------------------------
 resource "null_resource" "prep_bastion" {
-  depends_on = [null_resource.wait_for_bastion, aws_instance.master, null_resource.setup_kubectl_on_bastion, aws_instance.worker]
+  depends_on = [null_resource.wait_for_bastion, aws_instance.master, aws_instance.worker]
 
   connection {
     type        = "ssh"
