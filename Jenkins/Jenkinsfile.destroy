@@ -55,13 +55,10 @@ pipeline {
                 }
             }
         }
-
         stage('Delete Backend') {
             steps {
-                withCredentials([[
-                    $class: 'AmazonWebServicesCredentialsBinding',
-                    credentialsId: "${AWS_CRED_ID}"
-                ]]) {
+			 dir(BACKEND_S3) {
+               withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: AWS_CRED_ID]]) {
                     sh '''
                         chmod +x delete-backend.sh
                         ./delete-backend.sh "${BUCKET_NAME}" "${TABLE_NAME}" "${AWS_REGION}" --force
@@ -69,6 +66,7 @@ pipeline {
                 }
             }
         }
+	  }
     }
 
     post {
