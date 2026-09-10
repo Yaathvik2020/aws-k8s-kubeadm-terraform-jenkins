@@ -125,7 +125,7 @@ pipeline {
                             ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
                               -o ProxyCommand="$PROXY" -i /tmp/node_key.pem ubuntu@$MASTER_IP "kubectl get nodes -o wide"
 
-                            // rm -f /tmp/bastion_key.pem /tmp/node_key.pem //skip to connect master 
+                            # rm -f /tmp/bastion_key.pem /tmp/node_key.pem //skip to connect master 
                         '''
                     }
                 }
