@@ -1,6 +1,6 @@
 #!/bin/bash
 # ==============================================================================
-# master-init.sh
+# Booststrap script master script to set up cluater
 # Runs ONLY on the master node, AFTER common.sh.
 # Initializes the control plane and writes a ready-to-use join command
 # to /tmp/kubeadm_join_cmd.sh so Terraform can pull it down for the workers.
@@ -43,9 +43,9 @@ done
 # ---------------------------------------------------------------------------
 curl -fsSL -O "https://raw.githubusercontent.com/projectcalico/calico/${CALICO_VERSION}/manifests/custom-resources.yaml"
 
-sed -i "s|cidr: 192.168.0.0/16|cidr: ${POD_NETWORK_CIDR}|" custom-resources.yaml
+sed -i "s|cidr: 192.168.0.0/16|cidr: ${POD_CIDR}|" custom-resources.yaml
 
-if ! grep -q "cidr: ${POD_NETWORK_CIDR}" custom-resources.yaml; then
+if ! grep -q "cidr: ${POD_CIDR}" custom-resources.yaml; then
   echo "ERROR: failed to patch pod CIDR into custom-resources.yaml - upstream file format may have changed."
   cat custom-resources.yaml
   exit 1
