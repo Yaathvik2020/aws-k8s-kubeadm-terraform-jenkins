@@ -19,6 +19,11 @@ resource "aws_instance" "master" {
     volume_size = var.root_volume_size
     volume_type = "gp3"
   }
+ depends_on = [                              # ← ADD THIS, right here, still inside the { } of aws_instance.master
+    aws_nat_gateway.this,
+    aws_route.private_nat,
+    aws_route_table_association.private
+  ]
 }
 
 resource "aws_instance" "worker" {
@@ -35,4 +40,9 @@ resource "aws_instance" "worker" {
     volume_size = var.root_volume_size
     volume_type = "gp3"
   }
+ depends_on = [                              # ← ADD THIS, right here, still inside the { } of aws_instance.master
+    aws_nat_gateway.this,
+    aws_route.private_nat,
+    aws_route_table_association.private
+  ]
 }
