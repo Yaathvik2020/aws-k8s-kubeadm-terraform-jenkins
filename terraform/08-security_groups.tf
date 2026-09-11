@@ -58,6 +58,13 @@ resource "aws_security_group" "node" {
     security_groups = [aws_security_group.bastion.id]
   }
   ingress {
+    description = "typha_worker_to_worker"
+    from_port   = 5473
+    to_port     = 5473
+    protocol    = "tcp"
+    self        = true
+  }
+ ingress {
     description = "bgp_worker_to_worker"
     from_port   = 179
     to_port     = 179
