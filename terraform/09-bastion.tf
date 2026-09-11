@@ -14,6 +14,11 @@ resource "aws_instance" "bastion" {
   associate_public_ip_address = true
 
   tags = { Name = "${var.cluster_name}-bastion" }
+ depends_on = [                              # ← ADD THIS, right here, still inside the { } of aws_instance.master
+    aws_internet_gateway.this,
+    aws_route.public_internet,
+    aws_route_table_association.public
+  ]
 }
 
 # Waits until cloud-init/SSH is actually ready - "instance running" and
