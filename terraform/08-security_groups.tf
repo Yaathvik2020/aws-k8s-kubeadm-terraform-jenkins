@@ -50,7 +50,20 @@ resource "aws_security_group" "node" {
     protocol    = "tcp"
     self        = true
   }
-
+  ingress {
+    description = "Kubernetes API server access for bastion"
+    from_port   = 6443
+    to_port     = 6443
+    protocol    = "tcp"
+    security_groups = [aws_security_group.bastion.id]
+  }
+  ingress {
+    description = "bgp_worker_to_worker"
+    from_port   = 179
+    to_port     = 179
+    protocol    = "tcp"
+    self        = true
+  }
   ingress {
     description = "etcd"
     from_port   = 2379
