@@ -41,6 +41,8 @@ resource "null_resource" "wait_for_bastion" {
 
   provisioner "remote-exec" {
     inline = [
+       # Wait for cloud-init's own background setup (including its apt-get update) to finish
+      "cloud-init status --wait || true",
       "chmod +x /home/${var.ssh_user}/bastion-kubectl.sh && /home/${var.ssh_user}/bastion-kubectl.sh",   
     ]
   }
