@@ -277,3 +277,9 @@ resource "aws_iam_policy" "k8s-kubeadm-aws-alb-custom-policy" {
 }
   )
 }
+
+# iam.tf - add this alongside your existing node_role
+resource "aws_iam_role_policy_attachment" "ebs_csi" {
+  role = aws_iam_role.k8s-kubeadm-aws-alb-role.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy"
+}
