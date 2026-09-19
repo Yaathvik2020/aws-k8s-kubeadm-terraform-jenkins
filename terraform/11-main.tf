@@ -106,8 +106,8 @@ resource "null_resource" "setup_kubectl_on_bastion" {
 
       # sanity check
       "kubectl get nodes -o wide" ,
-      kubectl apply -k "github.com/kubernetes-sigs/aws-ebs-csi-driver/deploy/kubernetes/overlays/stable/?ref=release-1.35" ,
-      kubectl get pods -n kube-system -l app.kubernetes.io/name=aws-ebs-csi-driver
+      "kubectl apply -k \"github.com/kubernetes-sigs/aws-ebs-csi-driver/deploy/kubernetes/overlays/stable/?ref=release-1.35\"" ,
+      "kubectl get pods -n kube-system -l app.kubernetes.io/name=aws-ebs-csi-driver" 
     ]
   }
 }
