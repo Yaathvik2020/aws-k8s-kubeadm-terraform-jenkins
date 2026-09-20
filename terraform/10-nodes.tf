@@ -12,6 +12,7 @@ resource "aws_instance" "master" {
   vpc_security_group_ids = [aws_security_group.node.id]
   key_name               = aws_key_pair.node.key_name
   iam_instance_profile   = aws_iam_instance_profile.k8s-kubeadm-aws-alb-iam-profile.name
+  source_dest_check = false                           # This is an anti-spoofing security feature which is only allow communication ec2 level
 
   tags = { Name = "${var.cluster_name}-master" }
 
@@ -34,6 +35,7 @@ resource "aws_instance" "worker" {
   vpc_security_group_ids = [aws_security_group.node.id]
   key_name               = aws_key_pair.node.key_name
   iam_instance_profile   = aws_iam_instance_profile.k8s-kubeadm-aws-alb-iam-profile.name
+    source_dest_check = false                           # This is an anti-spoofing security feature which is only allow communication ec2 level
   tags = { Name = "${var.cluster_name}-worker-${count.index + 1}" }
 
   root_block_device {
