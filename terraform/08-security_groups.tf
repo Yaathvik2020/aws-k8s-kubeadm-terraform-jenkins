@@ -94,7 +94,6 @@ resource "aws_security_group" "node" {
     protocol    = "tcp"
     self        = true
   }
-
   ingress {
     description = "Calico BGP + VXLAN pod networking"
     from_port   = 0
@@ -102,7 +101,13 @@ resource "aws_security_group" "node" {
     protocol    = "udp"
     self        = true
   }
-
+  ingress {
+    description = "All TCP between cluster nodes (apiserver, etcd, kubelet, istiod, CNI, NodePort, etc.)"
+    from_port   = 0
+    to_port     = 65535
+    protocol    = "tcp"
+    self        = true
+  }
   egress {
     from_port   = 0
     to_port     = 0
