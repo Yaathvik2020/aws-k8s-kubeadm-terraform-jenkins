@@ -14,6 +14,10 @@ resource "aws_instance" "bastion" {
   associate_public_ip_address = true
 
   tags = { Name = "${var.cluster_name}-bastion" }
+  root_block_device {
+    volume_size = var.root_volume_size
+    volume_type = "gp3"
+  }
  depends_on = [                              # ← ADD THIS, right here, still inside the { } of aws_instance.master
     aws_internet_gateway.this,
     aws_route.public_internet,
