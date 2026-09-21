@@ -83,7 +83,7 @@ variable "ssh_user" {
   default     = "ubuntu"
 }
 
-#lb controller related variables
+#lb controller related variables not used anywhere
 variable "public_subnet_tags" {
 type = map(string)
 default = {
