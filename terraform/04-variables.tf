@@ -83,6 +83,16 @@ variable "ssh_user" {
   default     = "ubuntu"
 }
 
+#lb controller related variables
+variable "public_subnet_tags" {
+type = map(string)
+default = {
+    "kubernetes.io/role/elb"  = 1
+    "kubernetes.io/cluster/kubernetes"  = "owned"
+}
+description = "Tags to apply to all private subnets for lb discovery"
+}
+
 # ------------------------------------------------------------------------------
 # Kubernetes
 # ------------------------------------------------------------------------------
