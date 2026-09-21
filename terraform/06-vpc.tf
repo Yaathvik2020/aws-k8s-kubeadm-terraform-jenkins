@@ -25,7 +25,11 @@ resource "aws_subnet" "public" {
   availability_zone       = local.azs[count.index]
   map_public_ip_on_launch = true
 
-  tags = { Name = "${var.cluster_name}-public-${count.index + 1}" }
+  tags = { 
+Name = "${var.cluster_name}-public-${count.index + 1}"
+ "kubernetes.io/role/elb"  = 1
+ "kubernetes.io/cluster/kubernetes"  = "owned"
+}
 }
 
 
@@ -52,7 +56,11 @@ resource "aws_subnet" "private" {
   cidr_block        = var.private_subnet_cidrs[count.index]
   availability_zone = local.azs[count.index]
 
-  tags = { Name = "${var.cluster_name}-private-${count.index + 1}" }
+  tags = { 
+Name = "${var.cluster_name}-private-${count.index + 1}" 
+ "kubernetes.io/role/elb"  = 1
+ "kubernetes.io/cluster/kubernetes"  = "owned"
+}
 }
 
 # --- NAT Gateway(s) for private subnet outbound internet (apt, container images) ---
