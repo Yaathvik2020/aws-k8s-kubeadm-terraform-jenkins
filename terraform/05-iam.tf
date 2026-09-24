@@ -27,8 +27,7 @@ resource "aws_iam_role_policy_attachment" "aws-lb-policy" {
 resource "aws_iam_policy" "k8s-kubeadm-aws-alb-custom-policy" {
   name = "k8s-kubeadm-aws-alb-custom-policy"
   description = "Policy used by aws-lb controller to create lb resources"
-  policy = jsonencode(
-      {
+  policy = jsonencode({
     "Version": "2012-10-17",
     "Statement": [
         {
@@ -60,6 +59,8 @@ resource "aws_iam_policy" "k8s-kubeadm-aws-alb-custom-policy" {
                 "ec2:GetCoipPoolUsage",
                 "ec2:DescribeCoipPools",
                 "ec2:GetSecurityGroupsForVpc",
+                "ec2:DescribeIpamPools",
+                "ec2:DescribeRouteTables",
                 "elasticloadbalancing:DescribeLoadBalancers",
                 "elasticloadbalancing:DescribeLoadBalancerAttributes",
                 "elasticloadbalancing:DescribeListeners",
@@ -223,7 +224,8 @@ resource "aws_iam_policy" "k8s-kubeadm-aws-alb-custom-policy" {
                 "elasticloadbalancing:ModifyTargetGroupAttributes",
                 "elasticloadbalancing:DeleteTargetGroup",
                 "elasticloadbalancing:ModifyListenerAttributes",
-                "elasticloadbalancing:ModifyCapacityReservation"
+                "elasticloadbalancing:ModifyCapacityReservation",
+                "elasticloadbalancing:ModifyIpPools"
             ],
             "Resource": "*",
             "Condition": {
@@ -269,16 +271,17 @@ resource "aws_iam_policy" "k8s-kubeadm-aws-alb-custom-policy" {
                 "elasticloadbalancing:ModifyListener",
                 "elasticloadbalancing:AddListenerCertificates",
                 "elasticloadbalancing:RemoveListenerCertificates",
-                "elasticloadbalancing:ModifyRule"
+                "elasticloadbalancing:ModifyRule",
+                "elasticloadbalancing:SetRulePriorities"
             ],
             "Resource": "*"
         }
     ]
 }
-  )
+)
 }
 
-# iam.tf - add this alongside your existing node_role
+# iam.tf - add this along side your existing node_role
 resource "aws_iam_role_policy_attachment" "ebs_csi" {
   role = aws_iam_role.k8s-kubeadm-aws-alb-role.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy"
