@@ -6,7 +6,6 @@
 # ---------------------------------------------------------------------------
 resource "null_resource" "install_ebs_csi_driver" {
  depends_on = [
-    null_resource.bootstrap_master_via_bastion,
     null_resource.setup_kubectl_on_bastion,
     aws_iam_role_policy_attachment.ebs_csi,
   ]
