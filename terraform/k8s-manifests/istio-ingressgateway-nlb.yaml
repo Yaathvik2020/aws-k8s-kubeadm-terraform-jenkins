@@ -1,0 +1,129 @@
+# gateway-values.yaml
+# Istio ingress gateway (istio/gateway chart) exposed through an AWS NLB
+# created by the AWS Load Balancer Controller.
+#
+# Install:
+#   helm install istio-ingressgateway istio/gateway -n istio-ingress --create-namespace -f gateway-values.yaml
+#   helm install istio-ingressgateway istio/gateway -n istio-ingress -f gateway-values.yaml
+# Upgrade:
+#   helm upgrade --install istio-ingressgateway istio/gateway -n istio-ingress -f gateway-values.yaml
+
+# ---------------------------------------------------------------------------
+# Identity
+# ---------------------------------------------------------------------------
+name: istio-ingressgateway
+
+# Labels put on the pods. The Gateway resource selects on `istio: ingressgateway`.
+labels:
+  app: istio-ingressgateway
+  istio: ingressgateway
+
+# ---------------------------------------------------------------------------
+# Workload
+# ---------------------------------------------------------------------------
+kind: Deployment
+replicaCount: 2
+
+rbac:
+  enabled: true
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 2000m
+    memory: 1024Mi
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 80
+
+# Spread replicas across nodes (uncomment if you have several nodes/AZs)
+# topologySpreadConstraints:
+#   - maxSkew: 1
+#     topologyKey: topology.kubernetes.io/zone
+#     whenUnsatisfiable: ScheduleAnyway
+#     labelSelector:
+#       matchLabels:
+#         istio: ingressgateway
+
+# Pin the gateway to specific nodes (optional)
+nodeSelector: {}
+# nodeSelector:
+#   node-role: ingress
+
+tolerations: []
+affinity: {}
+
+# ---------------------------------------------------------------------------
+# Service -> AWS NLB
+# ---------------------------------------------------------------------------
+service:
+  type: LoadBalancer
+
+  # "Cluster" (default) works with any node.
+  # "Local" preserves the client source IP, but only nodes running a gateway
+  # pod will be healthy targets.
+  # externalTrafficPolicy: Local
+
+  annotations:
+    # Hand this Service to the AWS Load Balancer Controller (creates an NLB,
+    # not a Classic ELB)
+    service.beta.kubernetes.io/aws-load-balancer-type: "external"
+
+    # "instance": NLB -> NodePort -> pod (overlay CNIs such as Flannel, Calico VXLAN/IPIP;
+    #             requires node spec.providerID)
+    # "ip":       NLB -> pod IP (only if pod IPs are routable in the VPC)
+    service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: "instance"
+
+    # "internet-facing" -> public subnets tagged kubernetes.io/role/elb=1
+    # "internal"        -> private subnets tagged kubernetes.io/role/internal-elb=1
+    service.beta.kubernetes.io/aws-load-balancer-scheme: "internet-facing"
+
+    # NLB name and cross-zone balancing (LBC uses the attributes annotation)
+    service.beta.kubernetes.io/aws-load-balancer-name: "istio-ingress-nlb"
+    service.beta.kubernetes.io/aws-load-balancer-attributes: "load_balancing.cross_zone.enabled=true"
+
+    # Health check against Envoy's readiness endpoint
+    service.beta.kubernetes.io/aws-load-balancer-healthcheck-protocol: "http"
+    servicxe.beta.kubernetes.io/aws-load-balancer-healthcheck-port: "32021"
+    service.beta.kubernetes.io/aws-load-balancer-healthcheck-path: "/healthz/ready"
+    service.beta.kubernetes.io/aws-load-balancer-healthcheck-interval: "10"
+    service.beta.kubernetes.io/aws-load-balancer-healthcheck-healthy-threshold: "2"
+    service.beta.kubernetes.io/aws-load-balancer-healthcheck-unhealthy-threshold: "2"
+
+    # Optional: choose subnets explicitly instead of tag auto-discovery
+    # service.beta.kubernetes.io/aws-load-balancer-subnets: "subnet-aaa,subnet-bbb"
+
+    # Optional: restrict who can reach the NLB
+    # service.beta.kubernetes.io/load-balancer-source-ranges: "203.0.113.0/24"
+
+    # Optional: terminate TLS at the NLB with an ACM certificate.
+    # If you leave these out, the NLB passes TCP 443 through and Istio
+    # terminates TLS via the Gateway resource.
+    # service.beta.kubernetes.io/aws-load-balancer-ssl-cert: "arn:aws:acm:ap-south-1:123456789012:certificate/xxxx"
+    # service.beta.kubernetes.io/aws-load-balancer-ssl-ports: "443"
+    # service.beta.kubernetes.io/aws-load-balancer-backend-protocol: "tcp"
+
+  ports:
+    - name: status-port
+      port: 15021
+      protocol: TCP
+      targetPort: 15021
+      nodePort: 32021 
+    - name: http2
+      port: 80
+      protocol: TCP
+      targetPort: 80
+    - name: https
+      port: 443
+      protocol: TCP
+      targetPort: 443
