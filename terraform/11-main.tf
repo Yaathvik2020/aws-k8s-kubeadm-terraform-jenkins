@@ -110,8 +110,7 @@ resource "null_resource" "setup_kubectl_on_bastion" {
       "kubectl get pods -n kube-system -l app.kubernetes.io/name=aws-ebs-csi-driver" 
     ]
   }
-}
-# ------------------------------------------------------------------------------
+}# ------------------------------------------------------------------------------
 # Stage 4: same pattern per WORKER.
 # ------------------------------------------------------------------------------
 resource "null_resource" "bootstrap_worker_via_bastion" {
@@ -142,7 +141,40 @@ resource "null_resource" "bootstrap_worker_via_bastion" {
     ]
   }
 }
+#----------------------------------------------------------------------------
+# The field is immutable once set, but you can set it when it's empty. The value format is aws:///<availability-zone>/<instance-id>.
+# Do it for all nodes with one loop (uses your AWS CLI to look up each instance by its private IP):
+# ---------------------------------------------------------------------------
+resource "null_resource" "patch_node_provider_ids" {
+  depends_on = [null_resource.bootstrap_master_via_bastion]
 
+  triggers = {
+    master_id  = aws_instance.master.id
+    worker_ids = join(",", aws_instance.worker[*].id)
+  }
+
+  connection {
+    type                = "ssh"
+    host                = aws_instance.master.private_ip
+    user                = "ubuntu"
+    private_key         = tls_private_key.node.private_key_pem
+    bastion_host        = aws_instance.bastion.public_ip
+    bastion_user        = "ubuntu"
+    bastion_private_key = tls_private_key.bastion.private_key_pem
+  }
+
+  provisioner "remote-exec" {
+    inline = concat(
+      [
+        "kubectl patch node master -p '{\"spec\":{\"providerID\":\"aws:///${aws_instance.master.availability_zone}/${aws_instance.master.id}\"}}'",
+      ],
+      [
+        for i in range(var.worker_count) :
+        "kubectl patch node worker-${i + 1} -p '{\"spec\":{\"providerID\":\"aws:///${aws_instance.worker[i].availability_zone}/${aws_instance.worker[i].id}\"}}'"
+      ]
+    )
+  }
+}
 # --------------------------------------------------------------------------------------------------------------------------------
 # Stage 5: wipe the node key off the bastion once bootstrap is complete. skip the step  node key  needs to connect master via ssh
 # --------------------------------------------------------------------------------------------------------------------------------
