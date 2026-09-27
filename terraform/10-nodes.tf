@@ -20,6 +20,12 @@ resource "aws_instance" "master" {
     volume_size = var.root_volume_size
     volume_type = "gp3"
   }
+  #Pods reach the instance metadata service through an extra network hop, so the default hop limit of 1 causes credential failures.
+  metadata_options {
+    http_endpoint               = "enabled"
+    http_tokens                 = "required"
+    http_put_response_hop_limit = 2
+  }
  depends_on = [                              # ← ADD THIS, right here, still inside the { } of aws_instance.master
     aws_nat_gateway.this,
     aws_route.private_nat,
@@ -37,7 +43,13 @@ resource "aws_instance" "worker" {
   iam_instance_profile   = aws_iam_instance_profile.k8s-kubeadm-aws-alb-iam-profile.name
     source_dest_check = false                           # This is an anti-spoofing security feature which is only allow communication ec2 level
   tags = { Name = "${var.cluster_name}-worker-${count.index + 1}" }
-
+  
+#Pods reach the instance metadata service through an extra network hop, so the default hop limit of 1 causes credential failures.
+  metadata_options {
+    http_endpoint               = "enabled"
+    http_tokens                 = "required"
+    http_put_response_hop_limit = 2
+  }
   root_block_device {
     volume_size = var.root_volume_size
     volume_type = "gp3"
