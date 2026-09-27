@@ -53,7 +53,6 @@ resource "aws_iam_instance_profile" "alb_controller" {
 # ---------------------------------------------------------------------------
 resource "null_resource" "install_alb_controller" {
   depends_on = [
-    null_resource.setup_kubectl_on_bastion,
     null_resource.patch_node_provider_ids,
     aws_iam_role_policy_attachment.aws-lb-policy,
   ]
