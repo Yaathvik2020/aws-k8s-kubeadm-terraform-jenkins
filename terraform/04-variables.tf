@@ -11,7 +11,7 @@ variable "aws_region" {
 variable "cluster_name" {
   description = "Prefix used to name/tag every resource this project creates"
   type        = string
-  default     = "k8s-kubeadm"
+  default     = "kubernetes"
 }
 
 # ------------------------------------------------------------------------------
