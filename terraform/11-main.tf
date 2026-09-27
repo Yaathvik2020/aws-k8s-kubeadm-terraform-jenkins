@@ -166,11 +166,11 @@ resource "null_resource" "patch_node_provider_ids" {
   provisioner "remote-exec" {
     inline = concat(
       [
-        "kubectl patch node master -p '{\"spec\":{\"providerID\":\"aws:///${aws_instance.master.availability_zone}/${aws_instance.master.id}\"}}'",
+        "kubectl patch node ${var.cluster_name}-master -p '{\"spec\":{\"providerID\":\"aws:///${aws_instance.master.availability_zone}/${aws_instance.master.id}\"}}'",
       ],
       [
         for i in range(var.worker_count) :
-        "kubectl patch node worker-${i + 1} -p '{\"spec\":{\"providerID\":\"aws:///${aws_instance.worker[i].availability_zone}/${aws_instance.worker[i].id}\"}}'"
+        "kubectl patch node ${var.cluster_name}-worker-${i + 1} -p '{\"spec\":{\"providerID\":\"aws:///${aws_instance.worker[i].availability_zone}/${aws_instance.worker[i].id}\"}}'"
       ]
     )
   }
