@@ -280,7 +280,13 @@ resource "aws_iam_policy" "k8s-kubeadm-aws-alb-custom-policy" {
 }
 )
 }
-
+# ---------------------------------------------------------------------------
+# EBS CSI driver needs the same kind of thing the ALB controller does: a pod
+# running on a worker node calling the AWS API (ec2:CreateVolume,
+# AttachVolume, DeleteVolume, etc.) on its own behalf. No OIDC/IRSA on this
+# cluster, so it uses the node's own instance role - same one already
+# created in iam-alb-controller.tf, just with one more policy attached.
+# ---------------------------------------------------------------------------
 # iam.tf - add this along side your existing node_role
 resource "aws_iam_role_policy_attachment" "ebs_csi" {
   role = aws_iam_role.k8s-kubeadm-aws-alb-role.name
