@@ -92,6 +92,14 @@ default = {
 }
 description = "Tags to apply to all private subnets for lb discovery"
 }
+# ---------------------------------------------------------------------------
+# EBS
+# ---------------------------------------------------------------------------
+variable "ebs_sc_default" {
+  description = "Set the ebs-sc StorageClass as the cluster default (PVCs won't need storageClassName set explicitly)"
+  type        = bool
+  default     = true
+}
 
 # ------------------------------------------------------------------------------
 # Kubernetes
