@@ -84,36 +84,7 @@ resource "null_resource" "bootstrap_master_via_bastion" {
   }
 }
 # ------------------------------------------------------------------------------
-# Stage 3: bastion setup_kubectl_on_bastion
-# ------------------------------------------------------------------------------
-resource "null_resource" "setup_kubectl_on_bastion" {
-  depends_on = [null_resource.bootstrap_master_via_bastion, 
-                null_resource.bootstrap_worker_via_bastion,
-              ]
-
-  connection {
-    type        = "ssh"
-    host        = aws_instance.bastion.public_ip
-    user        = var.ssh_user
-    private_key = tls_private_key.bastion.private_key_pem
-  }
-
-  provisioner "remote-exec" {
-    inline = [
-      # kubeconfig was already pulled from master to the bastion's ~/kubeconfig
-      # during bootstrap_master_via_bastion — set it up as the default config
-      "mkdir -p ~/.kube",
-      "cp ~/kubeconfig ~/.kube/config",
-      "chmod 600 ~/.kube/config",
-
-      # sanity check
-      # "kubectl get nodes -o wide" ,
-      # "kubectl apply -k \"github.com/kubernetes-sigs/aws-ebs-csi-driver/deploy/kubernetes/overlays/stable/?ref=release-1.35\"" ,
-      # "kubectl get pods -n kube-system -l app.kubernetes.io/name=aws-ebs-csi-driver" 
-    ]
-  }
-}# ------------------------------------------------------------------------------
-# Stage 4: same pattern per WORKER.
+# Stage 3: same pattern per WORKER.
 # ------------------------------------------------------------------------------
 resource "null_resource" "bootstrap_worker_via_bastion" {
   count      = var.worker_count
@@ -140,6 +111,36 @@ resource "null_resource" "bootstrap_worker_via_bastion" {
       "ssh -o StrictHostKeyChecking=no -i ~/node_key ${var.ssh_user}@${aws_instance.worker[count.index].private_ip} 'chmod +x /tmp/common.sh && /tmp/common.sh'",
       "scp -o StrictHostKeyChecking=no -i ~/node_key ~/kubeadm_join_cmd.sh ${var.ssh_user}@${aws_instance.worker[count.index].private_ip}:/tmp/kubeadm_join_cmd.sh",
       "ssh -o StrictHostKeyChecking=no -i ~/node_key ${var.ssh_user}@${aws_instance.worker[count.index].private_ip} 'chmod +x /tmp/kubeadm_join_cmd.sh && /tmp/kubeadm_join_cmd.sh'",
+    ]
+  }
+}
+# ------------------------------------------------------------------------------
+# Stage 4: bastion setup_kubectl_on_bastion
+# ------------------------------------------------------------------------------
+resource "null_resource" "setup_kubectl_on_bastion" {
+  depends_on = [null_resource.bootstrap_master_via_bastion, 
+                null_resource.bootstrap_worker_via_bastion,
+              ]
+
+  connection {
+    type        = "ssh"
+    host        = aws_instance.bastion.public_ip
+    user        = var.ssh_user
+    private_key = tls_private_key.bastion.private_key_pem
+  }
+
+  provisioner "remote-exec" {
+    inline = [
+      # kubeconfig was already pulled from master to the bastion's ~/kubeconfig
+      # during bootstrap_master_via_bastion — set it up as the default config
+      "mkdir -p ~/.kube",
+      "cp ~/kubeconfig ~/.kube/config",
+      "chmod 600 ~/.kube/config",
+
+      # sanity check
+      # "kubectl get nodes -o wide" ,
+      # "kubectl apply -k \"github.com/kubernetes-sigs/aws-ebs-csi-driver/deploy/kubernetes/overlays/stable/?ref=release-1.35\"" ,
+      # "kubectl get pods -n kube-system -l app.kubernetes.io/name=aws-ebs-csi-driver" 
     ]
   }
 }
