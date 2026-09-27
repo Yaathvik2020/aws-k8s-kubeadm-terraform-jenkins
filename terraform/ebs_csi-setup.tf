@@ -1,14 +1,3 @@
-# ---------------------------------------------------------------------------
-# EBS CSI driver needs the same kind of thing the ALB controller does: a pod
-# running on a worker node calling the AWS API (ec2:CreateVolume,
-# AttachVolume, DeleteVolume, etc.) on its own behalf. No OIDC/IRSA on this
-# cluster, so it uses the node's own instance role - same one already
-# created in iam-alb-controller.tf, just with one more policy attached.
-# ---------------------------------------------------------------------------
-resource "aws_iam_role_policy_attachment" "ebs_csi" {
-  role       = aws_iam_role.alb_controller.name
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy"
-}
 
 # ---------------------------------------------------------------------------
 # Installs the EBS CSI driver and the ebs-sc StorageClass, run on the
