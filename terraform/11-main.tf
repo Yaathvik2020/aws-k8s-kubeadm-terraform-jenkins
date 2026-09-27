@@ -87,7 +87,9 @@ resource "null_resource" "bootstrap_master_via_bastion" {
 # Stage 3: bastion setup_kubectl_on_bastion
 # ------------------------------------------------------------------------------
 resource "null_resource" "setup_kubectl_on_bastion" {
-  depends_on = [null_resource.bootstrap_master_via_bastion]
+  depends_on = [null_resource.bootstrap_master_via_bastion, 
+                null_resource.bootstrap_worker_via_bastion,
+              ]
 
   connection {
     type        = "ssh"
@@ -146,7 +148,7 @@ resource "null_resource" "bootstrap_worker_via_bastion" {
 # Do it for all nodes with one loop (uses your AWS CLI to look up each instance by its private IP):
 # ---------------------------------------------------------------------------
 resource "null_resource" "patch_node_provider_ids" {
-  depends_on = [null_resource.bootstrap_master_via_bastion, null_resource.setup_kubectl_on_bastion,]
+  depends_on = [null_resource.setup_kubectl_on_bastion]
 
   triggers = {
     master_id  = aws_instance.master.id
