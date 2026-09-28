@@ -94,7 +94,7 @@ service:
 
     # Health check against Envoy's readiness endpoint
     service.beta.kubernetes.io/aws-load-balancer-healthcheck-protocol: "http"
-    servicxe.beta.kubernetes.io/aws-load-balancer-healthcheck-port: "32021"
+    service.beta.kubernetes.io/aws-load-balancer-healthcheck-port: "32021"
     service.beta.kubernetes.io/aws-load-balancer-healthcheck-path: "/healthz/ready"
     service.beta.kubernetes.io/aws-load-balancer-healthcheck-interval: "10"
     service.beta.kubernetes.io/aws-load-balancer-healthcheck-healthy-threshold: "2"
